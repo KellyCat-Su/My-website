@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html>
+
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>JSFiddle fo5qjcr0</title>
+
+  <style>
+    
+  </style>
+
+  
+</head>
+<body>
+  <!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>单词消消乐</title>
+  <style>
+    /* 蓝色系主题 */
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+      background: url('https://source.unsplash.com/1600x900/?blue,sky') no-repeat center center fixed;
+      background-size: cover;
+      background-color: #bbdefb;
+      color: #0d47a1;
+    }
+    .container {
+      margin: auto;
+      max-width: 800px;
+      padding: 20px;
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .card {
+      padding: 15px;
+      border: 2px solid #64b5f6;
+      border-radius: 5px;
+      background: #e3f2fd;
+      cursor: pointer;
+      transition: background 0.3s;
+      /* 让两行之间有点间距 */
+      line-height: 1.5;
+    }
+    .card.selected {
+      background: #ffeb99;
+    }
+    .card.matched {
+      visibility: hidden;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      border: none;
+      background: #2196f3;
+      color: white;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #1976d2;
+    }
+    /* 错误单词显示区 */
+    #error-display {
+      margin: 20px 0;
+      padding: 15px;
+      border: 2px solid #90caf9;
+      border-radius: 8px;
+      background: #e3f2fd;
+      color: #0d47a1;
+      display: none;
+      text-align: left;
+    }
+    /* 隐藏顶部按钮（学习模式专用） */
+    .hide {
+      display: none;
+    }
+    /* 返回按钮区域：居中显示 */
+    #back-btn-area {
+      text-align: center;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>单词消消乐</h1>
+    <!-- 学习模式顶部按钮（仅在学习模式下显示） -->
+    <div id="mode-buttons">
+      <button id="refresh-btn" onclick="refreshLearningMode()">刷新单词</button>
+      <button id="start-btn" onclick="startGame()">开始游戏</button>
+    </div>
+    <!-- 学习模式区域 -->
+    <div id="learning-mode">
+      <!-- 学习模式单词网格由脚本生成 -->
+    </div>
+    <!-- 游戏模式区域 -->
+    <div id="game-mode" style="display:none;">
+      <!-- 错误单词显示区 -->
+      <div id="error-display"></div>
+      <!-- 游戏卡片区域 -->
+      <div id="game-grid"></div>
+      <!-- 返回学习模式按钮区域 -->
+      <div id="back-btn-area"></div>
+    </div>
+  </div>
+
+  <script>
+    /* ============ 全局变量 ============ */
+    // 主词库，以下为你提供的单词（单词1）
+    const masterWords = [
+      { zh: "专业", en: "major" },
+      { zh: "专业", en: "subject" },
+      { zh: "纪律，学科", en: "discipline" },
+      { zh: "人类学", en: "anthropology" },
+      { zh: "语言学", en: "linguistics" },
+      { zh: "生理学", en: "physiology" },
+      { zh: "心理学", en: "psychology" },
+      { zh: "心理学家", en: "psychologist" },
+      { zh: "心理的", en: "psychological" },
+      { zh: "心理有病的人", en: "psychological patients" },
+      { zh: "心理课", en: "psychological course" },
+      { zh: "心理语言学", en: "psycholinguistics" },
+      { zh: "采矿", en: "mining" },
+      { zh: "采矿业", en: "mining industry" },
+      { zh: "身体的", en: "physical" },
+      { zh: "体育", en: "physical education" },
+      { zh: "体育", en: "PE" },
+      { zh: "物理学", en: "physics" },
+      { zh: "好的", en: "fine" },
+      { zh: "文科", en: "arts" },
+      { zh: "美术", en: "fine arts" },
+      { zh: "科学，理科", en: "science" },
+      { zh: "文理学院", en: "School of Arts and Sciences" },
+      { zh: "生命科学", en: "life science" },
+      { zh: "政治", en: "politics" },
+      { zh: "哲学", en: "philosophy" },
+      { zh: "地理", en: "geography" },
+      { zh: "地理学的", en: "geographical" },
+      { zh: "地理位置", en: "geographic location" },
+      { zh: "摄影新闻学", en: "photojournalism" },
+      { zh: "历史", en: "history" },
+      { zh: "当地历史", en: "local history" },
+      { zh: "病史", en: "medical history" },
+      { zh: "经济学史", en: "economic history" },
+      { zh: "历史学家", en: "historian" },
+      { zh: "历史的", en: "historical" },
+      { zh: "天文学", en: "astronomy" },
+      { zh: "占星术", en: "astrology" },
+      { zh: "媒体", en: "media" },
+      { zh: "大众传媒", en: "mass media" },
+      { zh: "多媒体房间", en: "media room" },
+      { zh: "媒体中心", en: "media center" },
+      { zh: "媒体研究", en: "media studies" },
+      { zh: "语言", en: "language" },
+      { zh: "现代语言", en: "modern languages" },
+      { zh: "应用的", en: "applied" },
+      { zh: "应用数学", en: "applied mathematics" },
+      { zh: "应用科学", en: "applied science" },
+      { zh: "环境", en: "environment" },
+      { zh: "环境的", en: "environmental" },
+      { zh: "环境学", en: "environmental studies" },
+      { zh: "保护当地环境", en: "respect the local environment" },
+      { zh: "环保的", en: "environmentally friendly" },
+      { zh: "环境科学", en: "environmental science" },
+      { zh: "化学", en: "chemistry" },
+      { zh: "在化学实验室", en: "in chemistry lab" },
+      { zh: "管理", en: "management" },
+      { zh: "时间管理", en: "time management" },
+      { zh: "理财管理", en: "money management" },
+      { zh: "压力管理", en: "stress management" },
+      { zh: "管理不善", en: "bad management" },
+      { zh: "统计学", en: "statistics" },
+      { zh: "考古学的", en: "archaeological" },
+      { zh: "考古学", en: "archaeology" },
+      { zh: "会计学", en: "accountancy" },
+      { zh: "会计学", en: "accounting" },
+      { zh: "生物学", en: "biology" },
+      { zh: "生物学家", en: "biologist" },
+      { zh: "微生物学", en: "microbiology" },
+      { zh: "生物的", en: "biological" },
+      { zh: "电脑", en: "computer" },
+      { zh: "电脑", en: "computers" },
+      { zh: "你在学什么？", en: "What are you studying?" },
+      { zh: "我在读计算机科学学士学位。", en: "I am doing a Bachelor of Computing." },
+      { zh: "文学", en: "literature" },
+      { zh: "社会学", en: "sociology" },
+      { zh: "工程学", en: "engineering" },
+      { zh: "建筑学", en: "architecture" },
+      { zh: "商务", en: "business" },
+      { zh: "法学", en: "law" },
+      { zh: "经济学", en: "economics" },
+      { zh: "经济", en: "economy" },
+      { zh: "经济的", en: "economic" },
+      { zh: "金融学", en: "finance" },
+      { zh: "银行学", en: "banking" },
+      { zh: "新生入学教育会", en: "orientation" },
+      { zh: "环境", en: "surroundings" },
+      { zh: "学校历史", en: "history of school" },
+      { zh: "老师和院系情况", en: "teachers and faculty" },
+      { zh: "成就", en: "achievements" },
+      { zh: "主要建筑的位置及其功能", en: "buildings, their functions and places" },
+      { zh: "文化", en: "culture" },
+      { zh: "规章制度", en: "rules and regulations" },
+      { zh: "如何解决问题", en: "problem-solving" },
+      { zh: "入学 / 旅游收到的欢迎辞", en: "welcome package" },
+      { zh: "注册", en: "register" },
+      { zh: "报名", en: "enroll" },
+      { zh: "报名", en: "enrollment" },
+      { zh: "报名费", en: "enrollment fee" },
+      { zh: "课程", en: "curriculum" },
+      { zh: "课外", en: "extra-curriculum" },
+      { zh: "学期", en: "semester" },
+      { zh: "学期，术语", en: "term" },
+      { zh: "学期结束", en: "end of term" },
+      { zh: "学期中", en: "half term" },
+      { zh: "作业", en: "assignment" },
+      { zh: "课程，实践", en: "session" },
+      { zh: "阅读课", en: "reading session" },
+      { zh: "虚拟的", en: "virtual" },
+      { zh: "电脑学习", en: "virtual learning" },
+      { zh: "测试", en: "test" },
+      { zh: "课程", en: "course" },
+      { zh: "高级课程", en: "advanced course" },
+      { zh: "中级课程", en: "intermediate course" },
+      { zh: "入门课程", en: "beginning course" },
+      { zh: "基础课", en: "basic course" },
+      { zh: "必修课", en: "compulsory course" },
+      { zh: "必修课", en: "obligatory course" },
+      { zh: "必修课", en: "required course" },
+      { zh: "强化课", en: "intensive course" },
+      { zh: "选修课", en: "optional course" },
+      { zh: "心理课", en: "psychological course" },
+      { zh: "进修课", en: "refresher course" },
+      { zh: "专业课", en: "specialized course" },
+      { zh: "生存课程", en: "survival course" },
+      { zh: "学习，书房", en: "study" },
+      { zh: "学习小组", en: "study club" },
+      { zh: "集中学习", en: "intensive study" },
+      { zh: "环境研究", en: "environmental studies" },
+      { zh: "媒体研究", en: "media studies" },
+      { zh: "商业研究", en: "business studies" },
+      { zh: "高级英语研究", en: "advanced English studies" },
+      { zh: "案例研究", en: "case studies" },
+      { zh: "教具", en: "study aids" },
+      { zh: "亚洲研究", en: "Asian studies" },
+      { zh: "东方研究", en: "oriental studies" },
+      { zh: "强化的", en: "intensive" },
+      { zh: "强化课", en: "intensive course" },
+      { zh: "练习", en: "practice" },
+      { zh: "普通英语练习", en: "general English practice" },
+      { zh: "电邮", en: "email" },
+      { zh: "附件", en: "attachment" },
+      { zh: "电邮附件", en: "email attachment" },
+      { zh: "电邮账号", en: "email account" },
+      { zh: "电子邮件", en: "email address" },
+      { zh: "授课", en: "lecture" },
+      { zh: "小组讨论", en: "tutorial" },
+      { zh: "学术研讨会", en: "seminar" },
+      { zh: "学习考核", en: "assessment" },
+      { zh: "评估方法", en: "assessment methods" },
+      { zh: "出勤率", en: "attendance" },
+      { zh: "考试", en: "exam" },
+      { zh: "开卷考试", en: "open-book exam" },
+      { zh: "闭卷考试", en: "close-book exam" },
+      { zh: "考试", en: "examination" },
+      { zh: "失败", en: "failure" },
+      { zh: "不及格率", en: "failure rate" },
+      { zh: "分数", en: "mark" },
+      { zh: "年级，成绩", en: "grade" },
+      { zh: "分数", en: "score" },
+      { zh: "记录，唱片，学习成绩", en: "record" },
+      { zh: "重考", en: "resit" },
+      { zh: "笔记", en: "note" },
+      { zh: "记笔记", en: "take notes" },
+      { zh: "记笔记", en: "note-taking" },
+      { zh: "比例", en: "rate" },
+      { zh: "辍学率", en: "drop-out rate" },
+      { zh: "群体，团队，小组", en: "group" },
+      { zh: "小组讨论", en: "group discussion" },
+      { zh: "办公室", en: "office" },
+      { zh: "招生办公室", en: "admission office" },
+      { zh: "父母的教育", en: "parental teaching" },
+      { zh: "学时", en: "teaching hours" },
+      { zh: "班级", en: "class" },
+      { zh: "招待会，接待处", en: "reception" },
+      { zh: "接待处", en: "reception center" },
+      { zh: "接待处", en: "reception desk" },
+      { zh: "目标", en: "goal" },
+      { zh: "磁带", en: "tape" },
+      { zh: "磁带", en: "cassette" },
+      { zh: "录像", en: "video" },
+      { zh: "介绍内容的录像", en: "information video" },
+      { zh: "录像", en: "video recording" },
+      { zh: "录像带", en: "videotape" },
+      { zh: "录像编辑", en: "videotape editor" },
+      { zh: "加", en: "plus" },
+      { zh: "水平，程度", en: "level" },
+      { zh: "不同水平", en: "different levels" },
+      { zh: "开始，初级", en: "beginning" },
+      { zh: "中级的", en: "intermediate" },
+      { zh: "高级的", en: "advanced" },
+      { zh: "初始者", en: "beginner" },
+      { zh: "基本的，基础的", en: "fundamental" },
+      { zh: "初级的", en: "elementary" },
+      { zh: "先进的，高级的", en: "advanced" },
+      { zh: "中间的", en: "mid" },
+      { zh: "中午", en: "midday" },
+      { zh: "中秋节", en: "mid-autumn festival" },
+      { zh: "期中", en: "mid-term" },
+      { zh: "学期中", en: "mid-semester" },
+      { zh: "中间范围", en: "mid-range" },
+      { zh: "讨论", en: "discussion" },
+      { zh: "重音，压力", en: "stress" },
+      { zh: "压力程度", en: "stress levels" },
+      { zh: "对压力的管理", en: "stress management" },
+      { zh: "压力的", en: "stressful" },
+      { zh: "压力来源", en: "possible cause of stress" },
+      { zh: "失业", en: "unemployment" },
+      { zh: "担心失业", en: "fear of unemployment" },
+      { zh: "环境", en: "surroundings" },
+      { zh: "周边环境", en: "physical surroundings" },
+      { zh: "饮食", en: "diet" },
+      { zh: "不健康饮食", en: "unhealthy diet" },
+      { zh: "改变饮食", en: "vary one's diet" },
+      { zh: "均衡饮食", en: "a balanced diet" },
+      { zh: "定期运动", en: "take regular exercise" },
+      { zh: "制定计划", en: "make plans" },
+      { zh: "存钱", en: "set money aside" },
+      { zh: "上培训课", en: "do training course" },
+      { zh: "免试入学制", en: "open admission" },
+      { zh: "磁带", en: "cassette" },
+      { zh: "录音机", en: "cassette recorder" },
+      { zh: "录音机", en: "tape recorder" },
+      { zh: "录音", en: "recording" },
+      { zh: "录音机", en: "recorder" },
+      { zh: "卡带式录音机", en: "tape recorder= cassette recorder" },
+      { zh: "最后期限", en: "deadline" },
+      { zh: "不能在最后期限内完成任务", en: "cannot meet the deadline" },
+      { zh: "离最后期限还有段时间", en: "distant deadline" },
+      { zh: "辍学", en: "dropout" },
+      { zh: "辍学率", en: "dropout rate" },
+      { zh: "填鸭式教学", en: "cramming" },
+      { zh: "反馈", en: "feedback" },
+      { zh: "获得反馈", en: "get feedback" },
+      { zh: "录像带", en: "videotape" },
+      { zh: "录像编辑", en: "videotape editor" },
+      { zh: "引人注意的东西，技巧", en: "hit" },
+      { zh: "阅读技巧", en: "reading hits" },
+      { zh: "考试", en: "examination" },
+      { zh: "毕业证书", en: "diploma" },
+      { zh: "护理毕业证", en: "nursing diploma" },
+      { zh: "工作室", en: "workshop" },
+      { zh: "恐惧", en: "panic" },
+      { zh: "教学", en: "teaching" },
+      { zh: "教学大纲", en: "teaching syllabus" },
+      { zh: "教学法", en: "teaching method" },
+      { zh: "教学人员", en: "teaching staff" },
+      { zh: "教学人员，教职员工", en: "academic teaching staff" },
+      { zh: "总统，总裁，[美] 大学校长", en: "president" },
+      { zh: "[英] 中小学校长", en: "headmaster" },
+      { zh: "主管，导演", en: "director" },
+      { zh: "科学家", en: "scientist" },
+      { zh: "秘书", en: "secretary" },
+      { zh: "管理者", en: "administrator" },
+      { zh: "管理支配", en: "administrate" },
+      { zh: "教授", en: "professor" },
+      { zh: "副教授", en: "associate professor" },
+      { zh: "助教", en: "assistant professor" },
+      { zh: "军官", en: "officer" },
+      { zh: "教育官员", en: "education officer" },
+      { zh: "教师", en: "teacher" },
+      { zh: "辅导员，导师", en: "tutor" },
+      { zh: "授课教师", en: "lecturer" },
+      { zh: "指导老师", en: "adviser" },
+      { zh: "历史学家", en: "historian" },
+      { zh: "导师", en: "supervisor" },
+      { zh: "监督", en: "supervise" },
+      { zh: "接待员", en: "receptionist" },
+      { zh: "接待处", en: "reception area" },
+      { zh: "校长", en: "chancellor" },
+      { zh: "[英] 中小学校长", en: "headmaster" },
+      { zh: "[美] 中小学校长", en: "principal" },
+      { zh: "助手", en: "assistant" },
+      { zh: "助教", en: "TA (teaching assistant)" },
+      { zh: "办公室助手", en: "office assistant" },
+      { zh: "售货员", en: "shop assistant" },
+      { zh: "研究助理", en: "RA (research assistant)" },
+      { zh: "资深督导师", en: "senior advisor" },
+      { zh: "高级员工", en: "senior staff" },
+      { zh: "报纸、论文", en: "paper" },
+      { zh: "论文", en: "essay" },
+      { zh: "论文计划", en: "essay plans" },
+      { zh: "学位论文", en: "dissertation" },
+      { zh: "主题、学位论文", en: "thesis" },
+      { zh: "摘要", en: "abstract" },
+      { zh: "内容", en: "content" },
+      { zh: "参考书目", en: "bibliography" },
+      { zh: "参考书目", en: "reference books" },
+      { zh: "工程、研究课题、项目", en: "project" },
+      { zh: "项目大纲", en: "project outline" },
+      { zh: "项目大纲", en: "project work" },
+      { zh: "项目主题", en: "theme of project" },
+      { zh: "初始项目", en: "starter project" },
+      { zh: "录像作业", en: "video project" },
+      { zh: "项目背景", en: "project back ground revision" },
+      { zh: "修改", en: "revise" },
+      { zh: "修改", en: "extensive" },
+      { zh: "主题、学科", en: "subject" },
+      { zh: "主题索引", en: "subject access guide" },
+      { zh: "测量、调查", en: "survey" },
+      { zh: "阅读习惯调查", en: "survey of reading" },
+      { zh: "研究、科研", en: "research" },
+      { zh: "科研机会", en: "research opportunities" },
+      { zh: "助理研究员", en: "research assistant" },
+      { zh: "科研方法", en: "research methods" },
+      { zh: "阅读", en: "reading" },
+      { zh: "数据（复数）", en: "data" },
+      { zh: "分析数据", en: "analyse data" },
+      { zh: "数据分析", en: "data analysis" },
+      { zh: "数据评估", en: "data assessment" },
+      { zh: "草稿", en: "draft" },
+      { zh: "交换草稿", en: "exchange draft" },
+      { zh: "野心、抱负", en: "ambition" },
+      { zh: "极富野心的", en: "ambitious" },
+      { zh: "论文结构组织很好", en: "well-organized" },
+      { zh: "小标题", en: "subtopics" },
+      { zh: "标题、题目", en: "title" },
+      { zh: "副标题、电影对白中的字幕", en: "subtitle" },
+      { zh: "问卷", en: "questionnaire" },
+      { zh: "面试", en: "interview" },
+      { zh: "面试官、考官", en: "interviewer" },
+      { zh: "被面试者、考生", en: "interviewee" },
+      { zh: "求职面试", en: "job interview" },
+      { zh: "面对面采访", en: "face to face interview" },
+      { zh: "受采访 / 调查者", en: "respondent" },
+      { zh: "文学", en: "literature" },
+      { zh: "文献综述", en: "review of literature" },
+      { zh: "结论", en: "conclusion" }
+    ];
+
+    // 全局变量
+    let remainingWords = [];
+    let reviewQueue = [];
+    let currentWords = [];
+    let gameCards = [];
+    let selectedCards = [];
+    let errorSet = new Set();
+    let roundCount = 0;
+
+    /* ============ 辅助函数 ============ */
+    function shuffle(array) {
+      return array.sort(() => Math.random() - 0.5);
+    }
+
+    function initRemainingWords() {
+      if (remainingWords.length < 16) {
+        const reviewEnSet = new Set(reviewQueue.map(item => item.word.en));
+        remainingWords = shuffle(masterWords.filter(word => !reviewEnSet.has(word.en)));
+      }
+    }
+
+    function addErrorsToReviewQueue() {
+      currentWords.forEach(word => {
+        if (errorSet.has(word.en)) {
+          let item = reviewQueue.find(item => item.word.en === word.en);
+          if (item) {
+            item.nextRound = roundCount + 2;
+          } else {
+            reviewQueue.push({ word: word, nextRound: roundCount + 2 });
+          }
+        }
+      });
+    }
+
+    function removeFromReviewQueue(wordEn) {
+      reviewQueue = reviewQueue.filter(item => item.word.en !== wordEn);
+    }
+
+    /* ============ 模式函数 ============ */
+    function refreshLearningMode() {
+      roundCount++;
+      document.getElementById("mode-buttons").classList.remove("hide");
+      const reviewWords = reviewQueue.filter(item => item.nextRound <= roundCount).map(item => item.word);
+      initRemainingWords();
+      const numNeeded = 16 - reviewWords.length;
+      let newWords = [];
+      if (numNeeded > 0) {
+        newWords = remainingWords.splice(0, numNeeded);
+      }
+      currentWords = reviewWords.concat(newWords);
+      if (currentWords.length < 16) {
+        initRemainingWords();
+        currentWords = currentWords.concat(remainingWords.splice(0, 16 - currentWords.length));
+      }
+      document.getElementById("learning-mode").style.display = "block";
+      document.getElementById("game-mode").style.display = "none";
+      let html = '<div class="grid">';
+      currentWords.forEach(word => {
+        html += `<div class="card"><div>${word.zh} -</div><div>${word.en}</div></div>`;
+      });
+      html += '</div>';
+      document.getElementById("learning-mode").innerHTML = html;
+    }
+
+    function startGame() {
+      if (currentWords.length < 16) {
+        alert("请先刷新单词！");
+        return;
+      }
+      document.getElementById("learning-mode").style.display = "none";
+      document.getElementById("mode-buttons").classList.add("hide");
+      document.getElementById("game-mode").style.display = "block";
+      document.getElementById("error-display").style.display = "none";
+      document.getElementById("back-btn-area").innerHTML = "";
+      selectedCards = [];
+      errorSet.clear();
+      gameCards = [];
+      currentWords.forEach(word => {
+        gameCards.push({ text: word.zh, type: "zh", pairKey: word.en, word: word });
+        gameCards.push({ text: word.en, type: "en", pairKey: word.en, word: word });
+      });
+      gameCards = shuffle(gameCards);
+      renderGameCards();
+    }
+
+    function renderGameCards() {
+      const gridDiv = document.getElementById("game-grid");
+      let html = '<div class="grid">';
+      gameCards.forEach((card, index) => {
+        let cardClass = card.matched ? "card matched" : "card";
+        html += `<div class="${cardClass}" id="card-${index}" onclick="selectGameCard(${index})">${card.text}</div>`;
+      });
+      html += '</div>';
+      document.getElementById("game-grid").innerHTML = html;
+      document.getElementById("back-btn-area").innerHTML = '<button onclick="backToLearningMode()">返回学习模式</button>';
+    }
+
+    function selectGameCard(index) {
+      const card = gameCards[index];
+      if (card.matched) return;
+      const cardDiv = document.getElementById("card-" + index);
+      if (selectedCards.includes(index)) return;
+      cardDiv.classList.add("selected");
+      selectedCards.push(index);
+      if (selectedCards.length === 2) {
+        setTimeout(checkSelectedCards, 500);
+      }
+    }
+
+    function checkSelectedCards() {
+      if (selectedCards.length < 2) return;
+      const [idx1, idx2] = selectedCards;
+      const card1 = gameCards[idx1];
+      const card2 = gameCards[idx2];
+      const cardDiv1 = document.getElementById("card-" + idx1);
+      const cardDiv2 = document.getElementById("card-" + idx2);
+      if (card1.pairKey === card2.pairKey && card1.type !== card2.type) {
+        card1.matched = true;
+        card2.matched = true;
+        cardDiv1.classList.add("matched");
+        cardDiv2.classList.add("matched");
+        removeFromReviewQueue(card1.pairKey);
+      } else {
+        errorSet.add(card1.pairKey);
+        errorSet.add(card2.pairKey);
+        cardDiv1.classList.remove("selected");
+        cardDiv2.classList.remove("selected");
+      }
+      selectedCards = [];
+      renderGameCards();
+      checkGameCompletion();
+    }
+
+    function checkGameCompletion() {
+      const unmatched = gameCards.filter(card => !card.matched);
+      if (unmatched.length === 0) {
+        showErrors();
+        addErrorsToReviewQueue();
+      }
+    }
+
+    function showErrors() {
+      if (errorSet.size > 0) {
+        let errorHTML = '<h2>待强化单词总结</h2><p>Congratulation! 请复习以下待强化的单词：</p><ul>';
+        currentWords.forEach(word => {
+          if (errorSet.has(word.en)) {
+            errorHTML += `<li>${word.zh} - ${word.en}</li>`;
+          }
+        });
+        errorHTML += '</ul>';
+        const errorDiv = document.getElementById("error-display");
+        errorDiv.innerHTML = errorHTML;
+        errorDiv.style.display = "block";
+      }
+    }
+
+    function backToLearningMode() {
+      document.getElementById("game-mode").style.display = "none";
+      document.getElementById("mode-buttons").classList.remove("hide");
+      refreshLearningMode();
+    }
+
+    window.onload = function() {
+      initRemainingWords();
+      refreshLearningMode();
+    };
+  </script>
+</body>
+</html>
+
+
+  <script>
+    
+  </script>
+</body>
+</html>
